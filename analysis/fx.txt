@@ -1,0 +1,55 @@
+lt	"LT-1548862-ggo4fjByDKbZ6VAeB0Yv4oO5PuREXS-cas.test.com"
+execution	"e3s1"
+_eventId	"submit"
+loginUrl	"https://passport.szlcsc.com/login?service=https%3A%2F%2Fmember.szlcsc.com%2Fmember%2Flogin.html%3Fs%3D%26c%3D%26f%3Dshop"
+afsId	""
+sig	""
+token	""
+scene	"login"
+loginFromType	"shop"
+showCheckCodeVal	"false"
+pwdSource	""
+username	"17620469625"
+password	"539e9ce5a8f2a3c04a0f08e29535da77"
+rememberPwd	"yes"
+
+
+https://passport.szlcsc.com/login
+https://passport.szlcsc.com/login
+SID	"765029d8-0307-4477-bc68-63192d36b987"
+
+Cookie
+	computerKey=a81790f155b9377fd724; noLoginCustomerFlag2=ea1a4a7643a55347dcb0; fromWebSite=shop;
+	ui=base; Qs_lvt_290854=1640520614%2C1640616751%2C1645542848%2C1646412585%2C1646464284; 
+	Qs_pv_290854=1090168956708053500%2C3275169692776957400%2C3496717044390450000%2C1666396451216788200%2C2166393348613396700; 
+	Hm_lvt_e2986f4b6753d376004696a1628713d2=1645542873,1646412595; 
+	guidePage=true; AGL_USER_ID=c4963ea5-041a-478e-bc7f-4587ee2fc9b2; _uab_collina=164035485817186719645422; 
+	salesmanCode=Z; noLoginCustomerFlag=61d6…=1646491886; searchHistoryRecord=10nf%200402%EF%BC%9A10nf; 
+	SID=765029d8-0307-4477-bc68-63192d36b987; 
+	mediav=%7B%22eid%22%3A%22586266%22%2C%22ep%22%3A%22%22%2C%22vid%22%3A%22jFw%3E7K1q_I%3Asqze.%5DoGL%22%2C%22ctn%22%3A%22%22%2C%22vvid%22%3A%22jFw%3E7K1q_I%3Asqze.%5DoGL%22%2C%22_mvnf%22%3A1%2C%22_mvctn%22%3A0%2C%22_mvck%22%3A0%2C%22_refnf%22%3A0%7D; acw_tc=dde7532016464918530753261eeffc056689131bd2485a34eb786aaf6e; 
+	PRO_NEW_SID=bf152ebc-4eda-4a10-bad8-7cd687020238; SESSION=2d122a01-6bc9-4ad6-94d1-066f8fac91e1
+	
+	
+	Cookie: computerKey=a81790f155b9377fd724; noLoginCustomerFlag2=ea1a4a7643a55347dcb0; Qs_lvt_290854=1640520614%2C1640616751%2C1645542848%2C1646412585%2C1646464284; Qs_pv_290854=1727131976710749400%2C1090168956708053500%2C3275169692776957400%2C3496717044390450000%2C1666396451216788200; AGL_USER_ID=0f7b9a88-27c0-4aba-9d63-0788b9adcf30; Hm_lvt_e2986f4b6753d376004696a1628713d2=1645542873,1646412595; guidePage=true; noLoginCustomerFlag=61d605ad3b881b51c10d; cpx=1; isLoginCustomerFlag=; Hm_lpvt_e2986f4b6753d376004696a1628713d2=1646491869; searchHistoryRecord=10nf%200402%EF%BC%9A10nf; SID=765029d8-0307-4477-bc68-63192d36b987; mediav=%7B%22eid%22%3A%22586266%22%2C%22ep%22%3A%22%22%2C%22vid%22%3A%22jFw%3E7K1q_I%3Asqze.%5DoGL%22%2C%22ctn%22%3A%22%22%2C%22vvid%22%3A%22jFw%3E7K1q_I%3Asqze.%5DoGL%22%2C%22_mvnf%22%3A1%2C%22_mvctn%22%3A0%2C%22_mvck%22%3A0%2C%22_refnf%22%3A0%7D; acw_tc=3ad7921616464918538661910e70f606c4e483018df26fdd2f87dbc4f3; PRO_NEW_SID=bf152ebc-4eda-4a10-bad8-7cd687020238
+isLoginCustomerFlag:"888803W"
+
+https://passport.szlcsc.com/login?service=https%3A%2F%2Fmember.szlcsc.com%2Fmember%2Flogin.html%3Fs%3D%26c%3D%26f%3Dshop
+
+https://member.szlcsc.com/member/hiddenAutoLogin.html?1646554788518=
+
+GET
+	https://www.szlcsc.com/
+  <input type="hidden" id="hot-key" name="hot-key" value="PMBT3904,215"> 
+
+GET
+	https://so.szlcsc.com/global.html?k=10nf%200402&hot-key=PMBT3904,215
+
+共<i class="pageCount">15</i>页，
+<i class="totalData">300</i>条记录 
+
+   t = e("#by-channel-total>b").text();
+   this.initPage(1, t, !0),
+   
+       <div id="by-channel-total" class="g04 spnum">符合条件商品：共
+      <b style="color: #DE3231;">300</b>件
+    </div>
