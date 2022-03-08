@@ -1,6 +1,8 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
 from spider import Spider 
 import sys
@@ -10,6 +12,7 @@ import lxml.html
 from lxml import etree
 import math
 from configparser import ConfigParser
+import json
 
 class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def  __init__ (self):
@@ -24,14 +27,73 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def get_lcsc(self):
         self.ThreadEmation = EmationThread()
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
+        self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
         self.ThreadEmation.start()
         
     def UpdateStatusText(self, res):
         self.statusLabel.setText(res)
+    
+    def UpdateTableWidget(self, res):
+        self.initTable( res, 0)
 
+    def initTable(self, productRecordList, table_rows):
+        for i, product in enumerate(productRecordList):
+            productname = product["productName"] +"\n" \
+                        + "封装： " + product["encapsulationModel"] + "\n" \
+                        + "品牌： " + product["lightBrandName"] + "\n" \
+                        + "型号： " + product["productModel"] + "\n" \
+                        + "描述： " + product["remarkPrefix"] + "\n" 
+            productCode = product["productCode"]
+            numberprices = product["numberprices"]+ "\n"
+            temp = numberprices.split(',', -1)
+            coeff =int(temp[1])
+            numberprices =""
+            '''
+            j=5
+            while j <= len(temp)-2:
+                numberprices +=str(int(temp[j])*coeff) + "+: " + temp[j+2]+ "\n"
+                j+=3 
+            '''
+            #for k, priitem in enumerate(product["priceDiscount"]["priceList"]):
+            #    numberprices +=str(priitem["spNumber"]* coeff) + "+: " + str(priitem["price"]) + "\n"
+            
+            for k, priitem in enumerate(product["productPriceList"]):
+                numberprices += str(priitem["startPurchasedNumber"]* coeff) + "+: " + str(priitem["productPrice"]) + "\n"
+            #numberprices= str(int(temp[5])* coeff) + ": " + temp[5+2]
+            stockNumber = "广东仓： " + str(product["gdWarehouseStockNumber"]) +"\n" \
+                        "江苏仓： "+str(product["jsWarehouseStockNumber"])
+
+            self.tableWidget.insertRow(table_rows)
+
+            productname_item = QTableWidgetItem(productname)   
+            productname_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)       
+            
+
+            productCode_item = QTableWidgetItem(productCode)
+            productCode_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+
+            numberprices_item = QTableWidgetItem(numberprices)
+            numberprices_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+
+            stockNumber_item = QTableWidgetItem(stockNumber)
+            stockNumber_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+
+            price_item = QTableWidgetItem("price")
+            price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+
+            self.tableWidget.setItem(i, 0, productname_item)
+            self.tableWidget.setItem(i, 1, productCode_item)
+            self.tableWidget.setItem(i, 2, numberprices_item)
+            self.tableWidget.setItem(i, 3, stockNumber_item)
+            #self.tableWidget.setItem(i, 4, price_item)
+            table_rows +=1
+        #self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+        self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
+    updateViewSignal = QtCore.pyqtSignal(list)
     def __init__(self, parent= None): # 从前端界面中传递参数到这个任务后台
         super(EmationThread, self).__init__(parent)
         self.spider = Spider()
@@ -53,7 +115,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         url = "https://so.szlcsc.com/search"
         data ={
             "sb"    : "0",
-            "pn"    : "2", #页号
+            "pn"    : "1", #页号
             "k" : "10nf+0402",
             "tc"    : "0",
             "pds" : "0",
@@ -65,7 +127,9 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         }
         html = spider.spr_post_gethtml(url, data=data, http2=True)
         self.writeToFile("searchResult.html", html)
-
+        jo1=json.loads(html)
+        print(jo1["result"]['productRecordList'][0])
+        self.updateViewSignal.emit(jo1["result"]['productRecordList'])
         self.printLog("Complete!")
         
 

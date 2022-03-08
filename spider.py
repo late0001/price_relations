@@ -399,7 +399,16 @@ class Spider:
             # with 内部请求共用一个client，参数也共用
             # 替换client的参数
             headers = {'X-Custom': 'from-request'}
-            r = client.get(url, headers=headers, cookies = self.cookies)
+            while True:
+                try:
+                
+                    r = client.get(url, headers=headers, cookies = self.cookies)
+                    break
+                except httpx.ConnectTimeout as e:
+                    print(e)
+                    print("请求超时")
+                    time.sleep(1)
+
             self.cookies.update(r.cookies)
             print ('http status:', r.status_code)
             print ('encoding:', r.encoding)
