@@ -40,19 +40,34 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         spider = self.spider
         self.crawlingLCSC()
         url ="https://so.szlcsc.com/global.html?k=10nf%25200402&hot-key=TJA1043T%2F1J"      
-        html = spider.spr_get(url)
+        html = spider.spr_get_html(url, http2=True)
         #print(html.decode("utf-8"))
-        respHtml = html.decode("utf-8")
-        self.writeToFile("foo.html", respHtml)
-        doc = etree.HTML(respHtml)
+        self.writeToFile("foo.html", html)
+        doc = etree.HTML(html)
         nodes = doc.xpath('//div[@id=\'by-channel-total\']//b')
         for href in nodes:
             print(href.text)
         pageCount = math.ceil( int(nodes[0].text)/20 )  
         print("page count: ", pageCount)
         #print(self.get_inner_html(nodes))
-        self.printLog("Complete!")
+        url = "https://so.szlcsc.com/search"
+        data ={
+            "sb"    : "0",
+            "pn"    : "2", #页号
+            "k" : "10nf+0402",
+            "tc"    : "0",
+            "pds" : "0",
+            "pa"    : "0",
+            "pt"    : "0",
+            "gp"    : "0",
+            "sk"    : "10nf+0402",
+            "stock" : "sz",
+        }
+        html = spider.spr_post_gethtml(url, data=data, http2=True)
+        self.writeToFile("searchResult.html", html)
 
+        self.printLog("Complete!")
+        
 
     def printLog(self,text):
         self.updateSignal.emit(text)  # 任务完成后，发送信号
@@ -69,7 +84,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
 
     def crawlingLCSC(self):
         spider = self.spider
-        html = spider.spr_get(
+        html = spider.spr_get_html(
             url="https://passport.szlcsc.com/login?service=https://member.szlcsc.com/member/login.html?s=&c=&f=shop", 
             http2 = True)
         respHtml = html
@@ -116,11 +131,11 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             "password" :  self.lc_password,
             "rememberPwd" : "yes"
         }
-        html, response = spider.spr_post_getrsp(url="https://passport.szlcsc.com/login", data=data1);
+        response = spider.spr_post_getrsp(url="https://passport.szlcsc.com/login", data=data1, http2=True);
         print("encoding : ", response.encoding)
         print("text : ", response.text)
         print("location", response.headers['location'])
-        respHtml = html
+        respHtml = response.text
         #print(respHtml)
         #print("location is : ", response.info())
         print("*"*80)
@@ -129,7 +144,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         print(spider.cookie)
         #https://member.szlcsc.com/member/login.html?s=&ticket=ST-321346-Xryqf1J6kcfl9f9ahVpd-cas.test.com
         url = response.headers['location']
-        html = spider.spr_get(
+        html = spider.spr_get_html(
             url=url, 
             http2 = True);
         self.writeToFile("foo2.html", html)
@@ -137,7 +152,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         
         
         url = "https://member.szlcsc.com/member/login.html?s=&c=&f=shop"
-        html = spider.spr_get(
+        html = spider.spr_get_html(
             url=url, 
             http2 = True);
         self.writeToFile("foo3.html", html)
@@ -145,7 +160,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         #html = spider.spr_get(url="https://www.szlcsc.com/async/page/home/order/customer/message")
         url="https://www.szlcsc.com/async/page/home/order/customer/message"
        
-        html = spider.spr_get(
+        html = spider.spr_get_html(
             url=url, 
             http2 = True);
         print(html)
