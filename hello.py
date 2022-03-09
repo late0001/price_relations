@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QHeaderView
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
@@ -43,7 +44,8 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
                         + "品牌： " + product["lightBrandName"] + "\n" \
                         + "型号： " + product["productModel"] + "\n" \
                         + "描述： " + product["remarkPrefix"] + "\n" 
-            productCode = product["productCode"]
+            productCode = product["productCode"] + "\n" \
+                        + product["productId"] #加入购物车时有用
             numberprices = product["numberprices"]+ "\n"
             temp = numberprices.split(',', -1)
             coeff =int(temp[1])
@@ -90,6 +92,10 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         #self.tableWidget.resizeColumnsToContents()
         self.tableWidget.resizeRowsToContents()
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
+        #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableWidget.setColumnWidth(0, 240)
+        self.tableWidget.setColumnWidth(2, 140)
+        #self.tableWidget.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
 
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
