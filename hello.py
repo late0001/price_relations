@@ -6,6 +6,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
 from spider import Spider 
+from queue import Queue
 import sys
 import re
 import httpx
@@ -14,22 +15,36 @@ from lxml import etree
 import math
 from configparser import ConfigParser
 import json
+from enum import Enum, auto
+
+class   MSG(Enum):
+    LOGIN = 0
+    SEARCH = auto()
+    ADDCART = auto()
+    GREEN   = auto()
+    PINK    = auto()
 
 class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def  __init__ (self):
         super(mywindow, self).__init__()
         self.setupUi(self)
         self.pushButton.clicked.connect(self.get_lcsc)
+        self.queue = Queue()
+        self.ThreadEmation = EmationThread(self.queue)
+        self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
+        self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
+
+    def loginToLCSC(self):
+        self.queue.put(MSG.LOGIN)
+        self.ThreadEmation.start()
+   
     def openDialog(self):
         filename, filetype =QFileDialog.getOpenFileName(self, "选取文件", "C:/", "All Files(*);;Text Files(*.csv)")
         print(filename, filetype)
         self.lineEdit.setText(filename)
         
-    def get_lcsc(self):
-        self.ThreadEmation = EmationThread()
-        self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
-        self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
-        self.ThreadEmation.start()
+    def get_lcsc(self):    
+        self.queue.put(MSG.SEARCH)
         
     def UpdateStatusText(self, res):
         self.statusLabel.setText(res)
@@ -100,13 +115,31 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
     updateViewSignal = QtCore.pyqtSignal(list)
-    def __init__(self, parent= None): # 从前端界面中传递参数到这个任务后台
+    def __init__(self, queue, parent= None): # 从前端界面中传递参数到这个任务后台
+        self.queue = queue 
         super(EmationThread, self).__init__(parent)
         self.spider = Spider()
 
     def run(self):  # 重写run  比较耗时的后台任务可以在这里运行    
         spider = self.spider
-        self.crawlingLCSC()
+        #msg = self.queue.get(block = False)
+        numbers = {
+            MSG.LOGIN : self.loginLCSC,
+            MSG.SEARCH : self.crawlingLCSC,
+            MSG.ADDCART : self.addCartAjax
+        }
+        while True:
+            msg_id = self.queue.get()
+            method = numbers.get(msg_id, "")
+            if method:
+                method()
+    
+    def addCartAjax():
+        print("*"*80)
+
+    def crawlingLCSC(self):
+        spider = self.spider
+        
         url ="https://so.szlcsc.com/global.html?k=10nf%25200402&hot-key=TJA1043T%2F1J"      
         html = spider.spr_get_html(url, http2=True)
         #print(html.decode("utf-8"))
@@ -137,7 +170,10 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         print(jo1["result"]['productRecordList'][0])
         self.updateViewSignal.emit(jo1["result"]['productRecordList'])
         self.printLog("Complete!")
-        
+    
+    def getHello(self):
+        spider = self.spider
+
 
     def printLog(self,text):
         self.updateSignal.emit(text)  # 任务完成后，发送信号
@@ -152,7 +188,8 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         p_end = html.rfind('<')
         return html[p_begin: p_end]
 
-    def crawlingLCSC(self):
+    def loginLCSC(self):
+        self.printLog("登录中...")
         spider = self.spider
         html = spider.spr_get_html(
             url="https://passport.szlcsc.com/login?service=https://member.szlcsc.com/member/login.html?s=&c=&f=shop", 
@@ -236,11 +273,12 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         print(html)
         self.writeToFile("foo4.html", html)
         print(spider.cookie)
-
+        self.printLog("登录完成")
 
 if __name__== "__main__":
     
     app=QtWidgets.QApplication(sys.argv)
     ui = mywindow()    
     ui.show()
+    ui.loginToLCSC()
     sys.exit(app.exec_())
