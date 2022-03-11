@@ -163,25 +163,27 @@ cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
             print(href.text)
         pageCount = math.ceil( int(nodes[0].text)/20 )  
         print("page count: ", pageCount)
+        
         #print(self.get_inner_html(nodes))
-        url = "https://so.szlcsc.com/search"
-        data ={
-            "sb"    : "0",
-            "pn"    : "1", #页号
-            "k" : "10nf+0402",
-            "tc"    : "0",
-            "pds" : "0",
-            "pa"    : "0",
-            "pt"    : "0",
-            "gp"    : "0",
-            "sk"    : "10nf+0402",
-            "stock" : "sz",
-        }
-        html = spider.spr_post_gethtml(url, data=data, http2=True)
-        self.writeToFile("searchResult.html", html)
-        jo1=json.loads(html)
-        print(jo1["result"]['productRecordList'][0])
-        self.updateViewSignal.emit(jo1["result"]['productRecordList'])
+        for page in range(1, pageCount):
+            url = "https://so.szlcsc.com/search"
+            data ={
+                "sb"    : "0",
+                "pn"    : str(page), #页号
+                "k" : "10nf+0402",
+                "tc"    : "0",
+                "pds" : "0",
+                "pa"    : "0",
+                "pt"    : "0",
+                "gp"    : "0",
+                "sk"    : "10nf+0402",
+                "stock" : "sz",
+            }
+            html = spider.spr_post_gethtml(url, data=data, http2=True)
+            self.writeToFile("searchResult.html", html)
+            jo1=json.loads(html)
+            print(jo1["result"]['productRecordList'][0])
+            self.updateViewSignal.emit(jo1["result"]['productRecordList'])
         self.printLog("Complete!")
     
     def getHello(self):

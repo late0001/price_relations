@@ -241,7 +241,7 @@ class Spider:
                 self.cookies.update(r.cookies)
                 print ('http status:', r.status_code)
                 print ('cookies', r.cookies)
-                print ('self.cookies', self.cookies)
+                #print ('self.cookies', self.cookies)
                 return r
 
     def spr_post(self, url, headers, data, timeout = 2):
@@ -414,7 +414,7 @@ class Spider:
             print ('http status:', r.status_code)
             print ('encoding:', r.encoding)
             print ('cookies: ', r.cookies)
-            print ('self.cookies', self.cookies)
+            #print ('self.cookies', self.cookies)
             return r
 
     def spr_get(self, url, headers, timeout = 2):
