@@ -398,7 +398,8 @@ class Spider:
         with httpx.Client(headers=headers, http2=True) as client:
             # with 内部请求共用一个client，参数也共用
             # 替换client的参数
-            headers = {'X-Custom': 'from-request'}
+            #headers = {'X-Custom': 'from-request'}
+            headers.update({'X-Custom': 'from-request'})
             while True:
                 try:
                 
@@ -413,6 +414,7 @@ class Spider:
             print ('http status:', r.status_code)
             print ('encoding:', r.encoding)
             print ('cookies: ', r.cookies)
+            print ('self.cookies', self.cookies)
             return r
 
     def spr_get(self, url, headers, timeout = 2):
@@ -470,7 +472,7 @@ class Spider:
         print ('='*80)
         return page
 
-    def spr_get_html(self, url, timeout = 2, http2 =False):
+    def spr_get_html(self, url, timeout = 2, header=None ,http2 =False):
         global cur_item_no
         headers = {
        #'referer': 'https://cn.torrentkitty.app/search/',
@@ -494,6 +496,8 @@ class Spider:
     #'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
         #'Cookie': '_pk_ses.2.a6f7=1; JSESSIONID=50CB9A0B10EAC7F72F84B66923CC2E21; _pk_id.2.a6f7=a596b944cc4c029a.1620272182.15.1623237968.1623236515.'
         }
+        if(header != None):
+            headers.update(header)
         # 用于模拟http头的User-agent
         ua_list = [
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv2.0.1) Gecko/20100101 Firefox/4.0.1",

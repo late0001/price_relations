@@ -29,6 +29,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         super(mywindow, self).__init__()
         self.setupUi(self)
         self.pushButton.clicked.connect(self.get_lcsc)
+        self.btn_Addcart.clicked.connect(self.addCart)
         self.queue = Queue()
         self.ThreadEmation = EmationThread(self.queue)
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
@@ -45,7 +46,10 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         
     def get_lcsc(self):    
         self.queue.put(MSG.SEARCH)
-        
+    
+    def addCart(self):
+        self.queue.put(MSG.ADDCART)
+
     def UpdateStatusText(self, res):
         self.statusLabel.setText(res)
     
@@ -134,8 +138,17 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             if method:
                 method()
     
-    def addCartAjax():
+    def addCartAjax(self):
+        spider = self.spider
         print("*"*80)
+        url = "https://cart.szlcsc.com/jsonp/add?\
+cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
+        #header = {"Referer" : "https://so.szlcsc.com/"}
+        #html = spider.spr_get_html(url, header=header, http2=True)
+        html = spider.spr_get_html(url, http2=True)
+        self.writeToFile("foo_addcart.html", html)
+        print("*"*80)
+        print(html)
 
     def crawlingLCSC(self):
         spider = self.spider
