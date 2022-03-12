@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QHeaderView
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
@@ -24,16 +25,35 @@ class   MSG(Enum):
     GREEN   = auto()
     PINK    = auto()
 
+class ProdItem():
+    idx =0
+    productname = ""
+    productCode = ""
+    numberprices = ""
+    stockNumber = ""
+    theRatio = 1
+    productPriceList=[]
+    purchasedNumber = 0
+    purchaseUnitPrice = 0
+    purchasedAmount = 0
+    productId = ""
+    def __init__(self):
+        pass
+    
+    
+
 class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def  __init__ (self):
         super(mywindow, self).__init__()
         self.setupUi(self)
         self.pushButton.clicked.connect(self.get_lcsc)
         self.btn_Addcart.clicked.connect(self.addCart)
+        self.btn_Calc.clicked.connect(self.Calc)
         self.queue = Queue()
         self.ThreadEmation = EmationThread(self.queue)
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
         self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
+        self.productRecordList = []
 
     def loginToLCSC(self):
         self.queue.put(MSG.LOGIN)
@@ -50,6 +70,42 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def addCart(self):
         self.queue.put(MSG.ADDCART)
 
+    def Calc(self):
+        if self.edt_quantity.text() =="":
+            QMessageBox.critical(self,"错误","Empty Value Not Allowed!！")
+            
+            self.edt_quantity.setFocus()
+            return
+        
+        if(not self.productRecordList):
+            return ;
+        quantity_t = int(self.edt_quantity.text())
+
+        for i, product in enumerate(self.productRecordList):
+            quantity = quantity_t
+            coeff = product.theRatio
+            unitPrice=0
+            if(quantity%coeff != 0):
+                quantity = quantity/coeff + 1
+            else:
+                quantity = quantity/coeff
+            product.purchasedNumber = quantity
+            for k, priitem in enumerate(product.productPriceList):
+                if( quantity >= priitem["startPurchasedNumber"] and  
+                    quantity <= priitem["endPurchasedNumber"]): 
+                    unitPrice = priitem["productPrice"]
+            if(unitPrice == 0):
+                print("can not found unit price")
+            product.purchaseUnitPrice = unitPrice
+            product.purchasedAmount = unitPrice * quantity * coeff
+
+        for i, product in enumerate(self.productRecordList):
+            price_item = QTableWidgetItem( str(product.purchaseUnitPrice) + "\n"
+                + str(product.purchasedAmount)+ "\n" + product.productId)
+            price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.tableWidget.setItem(i, 4, price_item)
+
+
     def UpdateStatusText(self, res):
         self.statusLabel.setText(res)
     
@@ -57,32 +113,12 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         self.initTable( res, 0)
 
     def initTable(self, productRecordList, table_rows):
+        self.productRecordList = productRecordList
         for i, product in enumerate(productRecordList):
-            productname = product["productName"] +"\n" \
-                        + "封装： " + product["encapsulationModel"] + "\n" \
-                        + "品牌： " + product["lightBrandName"] + "\n" \
-                        + "型号： " + product["productModel"] + "\n" \
-                        + "描述： " + product["remarkPrefix"] + "\n" 
-            productCode = product["productCode"] + "\n" \
-                        + product["productId"] #加入购物车时有用
-            numberprices = product["numberprices"]+ "\n"
-            temp = numberprices.split(',', -1)
-            coeff =int(temp[1])
-            numberprices =""
-            '''
-            j=5
-            while j <= len(temp)-2:
-                numberprices +=str(int(temp[j])*coeff) + "+: " + temp[j+2]+ "\n"
-                j+=3 
-            '''
-            #for k, priitem in enumerate(product["priceDiscount"]["priceList"]):
-            #    numberprices +=str(priitem["spNumber"]* coeff) + "+: " + str(priitem["price"]) + "\n"
-            
-            for k, priitem in enumerate(product["productPriceList"]):
-                numberprices += str(priitem["startPurchasedNumber"]* coeff) + "+: " + str(priitem["productPrice"]) + "\n"
-            #numberprices= str(int(temp[5])* coeff) + ": " + temp[5+2]
-            stockNumber = "广东仓： " + str(product["gdWarehouseStockNumber"]) +"\n" \
-                        "江苏仓： "+str(product["jsWarehouseStockNumber"])
+            productname = product.productname
+            productCode = product.productCode
+            numberprices = product.numberprices
+            stockNumber = product.stockNumber
 
             self.tableWidget.insertRow(table_rows)
 
@@ -159,15 +195,17 @@ cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
         self.writeToFile("foo.html", html)
         doc = etree.HTML(html)
         nodes = doc.xpath('//div[@id=\'by-channel-total\']//b')
+        print("nodes = ", nodes)
         for href in nodes:
             print(href.text)
         pageCount = math.ceil( int(nodes[0].text)/20 )  
         print("page count: ", pageCount)
-        
+        self.itemList =[]
         #print(self.get_inner_html(nodes))
         for page in range(1, pageCount):
             url = "https://so.szlcsc.com/search"
             data ={
+                #os : "1", #  1有现货， 0无
                 "sb"    : "0",
                 "pn"    : str(page), #页号
                 "k" : "10nf+0402",
@@ -181,11 +219,56 @@ cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
             }
             html = spider.spr_post_gethtml(url, data=data, http2=True)
             self.writeToFile("searchResult.html", html)
-            jo1=json.loads(html)
-            print(jo1["result"]['productRecordList'][0])
-            self.updateViewSignal.emit(jo1["result"]['productRecordList'])
+            try:
+                jo1=json.loads(html)
+            except JSONDecodeError as e:
+                print("catch error: ", e)
+            #print(jo1["result"]['productRecordList'][0])
+            self.parseItems(jo1["result"]['productRecordList'])
+        self.updateViewSignal.emit(self.itemList)
         self.printLog("Complete!")
-    
+
+    def parseItems(self, productRecordList):
+        
+        for i, product in enumerate(productRecordList):
+
+            productname = product["productName"] +"\n" \
+                        + "封装： " + product["encapsulationModel"] + "\n" \
+                        + "品牌： " + product["lightBrandName"] + "\n" \
+                        + "型号： " + product["productModel"] + "\n" \
+                        + "描述： " + product["remarkPrefix"] + "\n" 
+            productCode = product["productCode"] + "\n" \
+                        + product["productId"] #加入购物车时有用
+            productId = product["productId"] 
+            #numberprices = product["numberprices"]+ "\n"
+            #temp = numberprices.split(',', -1)
+            #coeff =int(temp[1])
+            coeff = product["theRatio"]
+            numberprices =""
+            '''
+            j=5
+            while j <= len(temp)-2:
+                numberprices +=str(int(temp[j])*coeff) + "+: " + temp[j+2]+ "\n"
+                j+=3 
+            '''
+            #for k, priitem in enumerate(product["priceDiscount"]["priceList"]):
+            #    numberprices +=str(priitem["spNumber"]* coeff) + "+: " + str(priitem["price"]) + "\n"
+            
+            for k, priitem in enumerate(product["productPriceList"]):
+                numberprices += str(priitem["startPurchasedNumber"]* coeff) + "+: " + str(priitem["productPrice"]) + "\n"
+            #numberprices= str(int(temp[5])* coeff) + ": " + temp[5+2]
+            stockNumber = "广东仓： " + str(product["gdWarehouseStockNumber"]) +"\n" \
+                        "江苏仓： "+str(product["jsWarehouseStockNumber"]) 
+            xitem = ProdItem()
+            xitem.productname = productname
+            xitem.productCode = productCode
+            xitem.productId = productId
+            xitem.numberprices = numberprices
+            xitem.stockNumber = stockNumber
+            xitem.productPriceList = product["productPriceList"]
+            xitem.theRatio = product["theRatio"]
+            self.itemList.append(xitem)
+
     def getHello(self):
         spider = self.spider
 

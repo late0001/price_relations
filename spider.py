@@ -239,6 +239,7 @@ class Spider:
                 #headers = {'X-Custom': 'from-request'}
                 r = client.post(url, headers=headers, params=data, cookies = self.cookies)
                 self.cookies.update(r.cookies)
+                print ('url: ', url)
                 print ('http status:', r.status_code)
                 print ('cookies', r.cookies)
                 #print ('self.cookies', self.cookies)
