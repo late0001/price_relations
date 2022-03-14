@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1004</width>
-    <height>628</height>
+    <height>723</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,8 +40,8 @@
    <widget class="QLabel" name="statusLabel">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>580</y>
+      <x>20</x>
+      <y>640</y>
       <width>731</width>
       <height>16</height>
      </rect>
@@ -54,9 +54,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>90</y>
+      <y>110</y>
       <width>961</width>
-      <height>451</height>
+      <height>511</height>
      </rect>
     </property>
     <column>
@@ -103,8 +103,8 @@
    <widget class="QPushButton" name="btn_Addcart">
     <property name="geometry">
      <rect>
-      <x>720</x>
-      <y>550</y>
+      <x>870</x>
+      <y>640</y>
       <width>93</width>
       <height>28</height>
      </rect>
@@ -134,6 +134,32 @@
     </property>
     <property name="text">
      <string>计算</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="ckb_spot">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>91</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>现货商品</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_Result">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>50</y>
+      <width>291</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
     </property>
    </widget>
   </widget>

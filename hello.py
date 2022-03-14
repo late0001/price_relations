@@ -21,6 +21,7 @@ from enum import Enum, auto
 class   MSG(Enum):
     LOGIN = 0
     SEARCH = auto()
+    CONDITION_SEARCH = auto()
     ADDCART = auto()
     GREEN   = auto()
     PINK    = auto()
@@ -48,11 +49,13 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         self.setupUi(self)
         self.pushButton.clicked.connect(self.get_lcsc)
         self.btn_Addcart.clicked.connect(self.addCart)
+        self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
         self.btn_Calc.clicked.connect(self.Calc)
         self.queue = Queue()
         self.ThreadEmation = EmationThread(self.queue)
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
         self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
+        self.ThreadEmation.updateResultSignal.connect(self.UpdateResultText)
         self.productRecordList = []
 
     def loginToLCSC(self):
@@ -63,8 +66,13 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         filename, filetype =QFileDialog.getOpenFileName(self, "选取文件", "C:/", "All Files(*);;Text Files(*.csv)")
         print(filename, filetype)
         self.lineEdit.setText(filename)
-        
-    def get_lcsc(self):    
+    
+    def changeCkbSpot(self):
+         if self.ckb_spot.checkState() == Qt.Checked:
+            self.ThreadEmation.setSearchCriteria(True)
+            self.queue.put(MSG.CONDITION_SEARCH)
+
+    def get_lcsc(self):  
         self.queue.put(MSG.SEARCH)
     
     def addCart(self):
@@ -72,8 +80,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
 
     def Calc(self):
         if self.edt_quantity.text() =="":
-            QMessageBox.critical(self,"错误","Empty Value Not Allowed!！")
-            
+            QMessageBox.critical(self,"错误","Empty Value Not Allowed!！")        
             self.edt_quantity.setFocus()
             return
         
@@ -100,8 +107,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
             product.purchasedAmount = unitPrice * quantity * coeff
 
         for i, product in enumerate(self.productRecordList):
-            price_item = QTableWidgetItem( str(product.purchaseUnitPrice) + "\n"
-                + str(product.purchasedAmount)+ "\n" + product.productId)
+            price_item = QTableWidgetItem(str(product.purchasedAmount))
             price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             self.tableWidget.setItem(i, 4, price_item)
 
@@ -112,7 +118,14 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def UpdateTableWidget(self, res):
         self.initTable( res, 0)
 
+    def UpdateResultText(self, res):
+        self.lbl_Result.setText(res)
+
     def initTable(self, productRecordList, table_rows):
+        rowCnt = self.tableWidget.rowCount()
+        # delete all lines
+        for i in range(rowCnt -1, -1, -1):
+            self.tableWidget.removeRow(i)
         self.productRecordList = productRecordList
         for i, product in enumerate(productRecordList):
             productname = product.productname
@@ -155,6 +168,9 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
     updateViewSignal = QtCore.pyqtSignal(list)
+    updateResultSignal = QtCore.pyqtSignal(str)
+    goods_in_stock = False
+    pageCount = 0
     def __init__(self, queue, parent= None): # 从前端界面中传递参数到这个任务后台
         self.queue = queue 
         super(EmationThread, self).__init__(parent)
@@ -166,6 +182,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         numbers = {
             MSG.LOGIN : self.loginLCSC,
             MSG.SEARCH : self.crawlingLCSC,
+            MSG.CONDITION_SEARCH : self.conditionSearch1,
             MSG.ADDCART : self.addCartAjax
         }
         while True:
@@ -177,14 +194,105 @@ class EmationThread(QtCore.QThread):  # 继承QThread
     def addCartAjax(self):
         spider = self.spider
         print("*"*80)
-        url = "https://cart.szlcsc.com/jsonp/add?\
-cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
+        url = "https://cart.szlcsc.com/jsonp/add?cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
         #header = {"Referer" : "https://so.szlcsc.com/"}
         #html = spider.spr_get_html(url, header=header, http2=True)
         html = spider.spr_get_html(url, http2=True)
         self.writeToFile("foo_addcart.html", html)
         print("*"*80)
         print(html)
+
+    def setSearchCriteria(self, goods_in_stock):
+        self.goods_in_stock = goods_in_stock
+    
+    def execJS(self, js_plain):
+        #data=open('sjtest.js','r',encoding= 'utf8').read()
+        data = js_plain
+        print(type(data))
+        data=js2py.eval_js(data)
+
+    def singlePageSearch(self, page):
+        spider = self.spider 
+        url = "https://so.szlcsc.com/search"
+        data ={
+            #os : "1", #  0有现货， 1无
+            "sb"    : "0",
+            "pn"    : str(page), #页号
+            "k" : "10nf+0402",
+            "tc"    : "0",
+            "pds" : "0",
+            "pa"    : "0",
+            "pt"    : "0",
+            "gp"    : "0",
+            "sk"    : "10nf+0402",
+            "stock" : "sz",
+        }
+        if (self.goods_in_stock):
+            data.update({"os":  "0"})
+        html = spider.spr_post_gethtml(url, data=data, http2=True)
+        self.writeToFile("searchResult.html", html)
+        for i in range(1, 15):
+            try:
+                jo1=json.loads(html)
+                break
+            except json.decoder.JSONDecodeError as e:
+                print("catch error: ", e)
+                doc = etree.HTML(html)
+                scr_node = doc.xpath('//script')
+                print(src_node)
+                return []
+        return jo1["result"]
+        #print(jo1["result"]['productRecordList'][0])
+
+
+    def conditionSearch(self):
+        spider = self.spider 
+        if(self.pageCount == 0):
+            self.printLog("没有先搜一下就设定条件!")
+            return
+        totalCount = 0
+        jo_resulut =self.singlePageSearch(1)
+        if(not jo_resulut):
+            return;
+        totalCount = jo_resulut["totalCount"]
+        
+        pageCount = math.ceil(totalCount/20.0)
+        self.pageCount = pageCount
+        self.updateResultSignal.emit("符合条件商品，共" + str(totalCount) + "件, " 
+            + str(pageCount) + " 页")
+        self.itemList =[]
+        self.parseItems(jo_resulut['productRecordList'])
+        #print(self.get_inner_html(nodes))
+        for page in range(2, pageCount):
+            jo1 = self.singlePageSearch(page)
+            if(not jo_resulut):
+                return;
+            #print(jo1["result"]['productRecordList'][0])
+            self.parseItems(jo1['productRecordList'])
+        self.updateViewSignal.emit(self.itemList)
+        self.printLog("Complete!")
+
+    def conditionSearch1(self):
+        spider = self.spider 
+        if(self.pageCount == 0):
+            self.printLog("没有先搜一下就设定条件!")
+            return
+        totalCount = 0
+        jo_resulut =self.singlePageSearch(1)
+        if(not jo_resulut):
+            return;
+        totalCount = jo_resulut["totalCount"]
+        
+        pageCount = math.ceil(totalCount/20.0)
+        self.pageCount = pageCount
+        self.updateResultSignal.emit("符合条件商品，共" + str(totalCount) + "件, " 
+            + str(pageCount) + " 页")
+        self.itemList =[]
+        self.parseItems(jo_resulut['productRecordList'])
+
+        self.updateViewSignal.emit(self.itemList)
+        self.printLog("Complete!")
+
 
     def crawlingLCSC(self):
         spider = self.spider
@@ -196,38 +304,20 @@ cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
         doc = etree.HTML(html)
         nodes = doc.xpath('//div[@id=\'by-channel-total\']//b')
         print("nodes = ", nodes)
+        if(not nodes):
+            print("未获取到数据")
+            self.printLog("未获取到数据!") 
+            return
         for href in nodes:
             print(href.text)
-        pageCount = math.ceil( int(nodes[0].text)/20 )  
+        totalCount = int(nodes[0].text)
+        pageCount = math.ceil( totalCount/20 )  
         print("page count: ", pageCount)
-        self.itemList =[]
-        #print(self.get_inner_html(nodes))
-        for page in range(1, pageCount):
-            url = "https://so.szlcsc.com/search"
-            data ={
-                #os : "1", #  1有现货， 0无
-                "sb"    : "0",
-                "pn"    : str(page), #页号
-                "k" : "10nf+0402",
-                "tc"    : "0",
-                "pds" : "0",
-                "pa"    : "0",
-                "pt"    : "0",
-                "gp"    : "0",
-                "sk"    : "10nf+0402",
-                "stock" : "sz",
-            }
-            html = spider.spr_post_gethtml(url, data=data, http2=True)
-            self.writeToFile("searchResult.html", html)
-            try:
-                jo1=json.loads(html)
-            except JSONDecodeError as e:
-                print("catch error: ", e)
-            #print(jo1["result"]['productRecordList'][0])
-            self.parseItems(jo1["result"]['productRecordList'])
-        self.updateViewSignal.emit(self.itemList)
-        self.printLog("Complete!")
-
+        self.pageCount = pageCount
+        self.updateResultSignal.emit("符合条件商品，共" + str(totalCount) + "件, "
+            + str(pageCount) + " 页")
+        self.conditionSearch()
+    
     def parseItems(self, productRecordList):
         
         for i, product in enumerate(productRecordList):
@@ -336,7 +426,7 @@ cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
             "password" :  self.lc_password,
             "rememberPwd" : "yes"
         }
-        response = spider.spr_post_getrsp(url="https://passport.szlcsc.com/login", data=data1, http2=True);
+        response = spider.spr_post(url="https://passport.szlcsc.com/login", data=data1, http2=True);
         print("encoding : ", response.encoding)
         print("text : ", response.text)
         print("location", response.headers['location'])

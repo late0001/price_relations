@@ -233,19 +233,26 @@ class Spider:
         return html
 
     def spr_post_h2(self, url, headers, data):
-         with httpx.Client(headers=headers, params=data, http2=True) as client:
-                # with 内部请求共用一个client，参数也共用
-                # 替换client的参数
-                #headers = {'X-Custom': 'from-request'}
-                r = client.post(url, headers=headers, params=data, cookies = self.cookies)
-                self.cookies.update(r.cookies)
-                print ('url: ', url)
-                print ('http status:', r.status_code)
-                print ('cookies', r.cookies)
-                #print ('self.cookies', self.cookies)
-                return r
+        for i in range(1,15):
+            try:
+                with httpx.Client(headers=headers, params=data, http2=True) as client:
+                    # with 内部请求共用一个client，参数也共用
+                    # 替换client的参数
+                    #headers = {'X-Custom': 'from-request'}
+                    r = client.post(url, headers=headers, params=data, cookies = self.cookies)
+                    self.cookies.update(r.cookies)
+                    print ('url: ', url)
+                    print ('http status:', r.status_code)
+                    print ('cookies', r.cookies)
+                    #print ('self.cookies', self.cookies)
+                    return r
+            except (httpx.ConnectTimeout, httpx.ReadTimeout) as e:
+                print("Error occuer:", e )
+                print("retry get url: %s\n Count: %d"% (url, i))
+        if(i >= 15):
+            print("failed, retry 15 times can not get response text")    
 
-    def spr_post(self, url, headers, data, timeout = 2):
+    def spr_post_h11(self, url, headers, data, timeout = 2):
         global cur_item_no
        
         #url = "https://cn.torrentkitty.app/search/"
@@ -299,55 +306,7 @@ class Spider:
         print ('='*80)
         return page
 
-    def spr_post_gethtml(self, url, data, timeout = 2, http2 = False):
-        global cur_item_no
-        headers = {
-           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-           'Accept-Charset':'GB2312,utf-8;q=0.7,*;q=0.7', 
-           'Accept-Language': 'zh-CN,zh;q=0.9',
-           'Cache-Control': 'max-age=0',
-           'Connection': 'keep-alive',
-           #'Host': 'certsign.realtek.com',
-           #'Origin': 'https://certsign.realtek.com',
-           #'Content-Type': 'application/x-www-form-urlencoded',
-           #'Referer': 'https://certsign.realtek.com/SMSOTP.jsp',
-           'sec-ch-ua':'" Not A;Brand";v="99", "Chromium";v="91", "Google Chrome";v="91"',
-           'sec-ch-ua-mobile': '?1',
-           'sec-fetch-dest':'document',
-           'sec-fetch-mode':'navigate',
-           'sec-fetch-site': 'same-origin',
-           'sec-fetch-user':'?1',
-           'upgrade-insecure-requests':'1',
-           'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Mobile Safari/537.36',
-        #'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
-            #'Cookie': '_pk_ses.2.a6f7=1; JSESSIONID=50CB9A0B10EAC7F72F84B66923CC2E21; _pk_id.2.a6f7=a596b944cc4c029a.1620272182.15.1623237968.1623236515.'
-        }
-            # 用于模拟http头的User-agent
-        ua_list = [
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv2.0.1) Gecko/20100101 Firefox/4.0.1",
-            "Mozilla/5.0 (Windows NT 6.1; rv2.0.1) Gecko/20100101 Firefox/4.0.1",
-            "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; en) Presto/2.8.131 Version/11.11",
-            "Opera/9.80 (Windows NT 6.1; U; en) Presto/2.8.131 Version/11.11",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"
-        ]
-        #user_agent = random.choice(ua_list)
-        
-        #opener.addheaders = heads.items() 
-        #url = "https://cn.torrentkitty.app/search/"
-        #opener = self.opener
-        #print ("get url:" + url )
-        #page = opener.open(url)
-        #ssl._create_default_https_context = ssl._create_unverified_context
-        #deal_data = bytes(parse.urlencode(data), encoding='utf8')
-        if(http2):
-            r = self.spr_post_h2(url, headers, data)
-            return r.text
-
-        r = self.spr_post(url, headers, data=data)
-        html = r.read()
-        return html  
- 
-    def spr_post_getrsp(self, url, data, timeout = 2, http2 = False):
+    def spr_post(self, url, data, header = None, timeout = 2, http2 = False):
         global cur_item_no
         headers = {
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -389,10 +348,17 @@ class Spider:
         #deal_data = bytes(parse.urlencode(data), encoding='utf8')
         if(http2):
             r = self.spr_post_h2(url, headers, data)
-            return r
-        
-        r = self.spr_post(url, headers, data)
+        else:
+            r = self.spr_post_h11(url, headers, data)
         return r 
+
+    def spr_post_gethtml(self, url, data, timeout = 2, http2 = False):
+        r = self.spr_post(url, data, timeout=timeout, http2=http2)
+        if(http2):
+            return r.text
+        return r.read()  
+ 
+    
 
 
     def spr_get_h2(self, url, headers, timeout =2):
@@ -410,6 +376,9 @@ class Spider:
                     print(e)
                     print("请求超时")
                     time.sleep(1)
+                except httpx.ConnectError as e:
+                    print(e)
+                    time.sleep(1)
 
             self.cookies.update(r.cookies)
             print ('http status:', r.status_code)
@@ -418,7 +387,7 @@ class Spider:
             #print ('self.cookies', self.cookies)
             return r
 
-    def spr_get(self, url, headers, timeout = 2):
+    def spr_get_h11(self, url, headers, timeout = 2):
         global cur_item_no
         
         #user_agent = random.choice(ua_list)
@@ -470,10 +439,10 @@ class Spider:
         cur_item_no+=1
         #print ('get url: ', url)
         print ('http status:',page.getcode())
-        print ('='*80)
+        print ('='*80) 
         return page
 
-    def spr_get_html(self, url, timeout = 2, header=None ,http2 =False):
+    def spr_get(self, url, header, timeout=2, http2=False):
         global cur_item_no
         headers = {
        #'referer': 'https://cn.torrentkitty.app/search/',
@@ -521,10 +490,16 @@ class Spider:
         if http2 == True:
             print(" http2 request: ", url)
             r = self.spr_get_h2(url, headers, timeout)
+        else:
+            r = self.spr_get_h11(url, headers, timeout)
+        return r
+
+    def spr_get_html(self, url, header=None , timeout = 2, http2 =False):
+        r = self.spr_get(url, header, timeout, http2)
+        if(http2):
             return r.text
-        
-        r = self.spr_get(url, headers)
-        return r.read()
+        else:
+            return r.read()
 
 
     def getHtml3(self, url):
