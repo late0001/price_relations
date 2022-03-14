@@ -41,7 +41,15 @@ class ProdItem():
     def __init__(self):
         pass
     
-    
+class MyTableWidgetItem(QTableWidgetItem):
+    def __init__(self, text, sortKey):
+        #call custom constructor with UserType item type
+        QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
+        self.sortKey = sortKey
+
+    #Qt uses a simple < check for sorting items, override this to use the sortKey
+    def __lt__(self, other):
+        return self.sortKey < other.sortKey    
 
 class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def  __init__ (self):
@@ -51,6 +59,8 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
         self.btn_Calc.clicked.connect(self.Calc)
+        self.tableWidget.setSortingEnabled(True);
+        self.tableWidget.sortByColumn(4, Qt.AscendingOrder)
         self.queue = Queue()
         self.ThreadEmation = EmationThread(self.queue)
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
@@ -107,7 +117,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
             product.purchasedAmount = unitPrice * quantity * coeff
 
         for i, product in enumerate(self.productRecordList):
-            price_item = QTableWidgetItem(str(product.purchasedAmount))
+            price_item = MyTableWidgetItem(str(product.purchasedAmount), product.purchasedAmount)
             price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             self.tableWidget.setItem(i, 4, price_item)
 
