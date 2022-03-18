@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
+from page_navigator import PageNavigator
 from spider import Spider 
 from queue import Queue
 import sys
@@ -17,6 +18,7 @@ import math
 from configparser import ConfigParser
 import json
 from enum import Enum, auto
+
 
 class   MSG(Enum):
     LOGIN = 0
@@ -55,6 +57,9 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     def  __init__ (self):
         super(mywindow, self).__init__()
         self.setupUi(self)
+        self.pageNavigator = PageNavigator()
+        self.horizontalLayout.addWidget(self.pageNavigator)
+        self.pageNavigator.setMaxPage(15)
         self.pushButton.clicked.connect(self.get_lcsc)
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
@@ -478,5 +483,5 @@ if __name__== "__main__":
     app=QtWidgets.QApplication(sys.argv)
     ui = mywindow()    
     ui.show()
-    ui.loginToLCSC()
+    #ui.loginToLCSC()
     sys.exit(app.exec_())

@@ -367,19 +367,25 @@ class Spider:
             # 替换client的参数
             #headers = {'X-Custom': 'from-request'}
             headers.update({'X-Custom': 'from-request'})
-            while True:
+            for i in range(0, 15):
                 try:
                 
                     r = client.get(url, headers=headers, cookies = self.cookies)
                     break
                 except httpx.ConnectTimeout as e:
                     print(e)
-                    print("请求超时")
+                    print("请求超时, retry ", i)
                     time.sleep(1)
                 except httpx.ConnectError as e:
                     print(e)
+                    print("连接异常, retry ", i)
                     time.sleep(1)
-
+                except httpx.ReadTimeout as e: 
+                    print(e)
+                    print("读取超时, retry ", i)
+                    time.sleep(1)
+            if( i >= 15):
+                print("试 16 次都失败了，请稍后再访问或检查您的网络")
             self.cookies.update(r.cookies)
             print ('http status:', r.status_code)
             print ('encoding:', r.encoding)

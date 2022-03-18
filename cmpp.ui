@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1004</width>
-    <height>723</height>
+    <height>787</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,7 +41,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>640</y>
+      <y>710</y>
       <width>731</width>
       <height>16</height>
      </rect>
@@ -103,8 +103,8 @@
    <widget class="QPushButton" name="btn_Addcart">
     <property name="geometry">
      <rect>
-      <x>870</x>
-      <y>640</y>
+      <x>880</x>
+      <y>700</y>
       <width>93</width>
       <height>28</height>
      </rect>
@@ -161,6 +161,17 @@
     <property name="text">
      <string>TextLabel</string>
     </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>640</y>
+      <width>951</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout"/>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
