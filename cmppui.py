@@ -64,7 +64,7 @@ class Ui_Nima(object):
         self.lbl_Result.setGeometry(QtCore.QRect(390, 50, 291, 20))
         self.lbl_Result.setObjectName("lbl_Result")
         self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(20, 640, 951, 51))
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(20, 640, 951, 41))
         self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)

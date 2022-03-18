@@ -27,9 +27,16 @@ class PageNavigator(QWidget):
 		self.setMaxPage(1)
 		qss = """
 .QLabel[page="true"] 
-{ padding: 6px; }
+{	
+	padding: 6px; 
+	border: 1px solid #ccc;
+	margin-right: 12px; 
+}
 .QLabel[currentPage="true"] 
-{ color: rgb(190, 0, 0);}
+{ 
+	color: #fff;
+	background: #0093e6;
+}
 .QLabel[page="true"]:hover { 
 		color: white; border-radius: 4px; 
 		background-color: qlineargradient(spread:reflect, x1:0, y1:0, x2:0, y2:1, 
