@@ -494,7 +494,7 @@ class Spider:
         print ('get url: ', url)
 
         if http2 == True:
-            print(" http2 request: ", url)
+            print("http2 request: ", url)
             r = self.spr_get_h2(url, headers, timeout)
         else:
             r = self.spr_get_h11(url, headers, timeout)

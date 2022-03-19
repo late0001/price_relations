@@ -3,9 +3,12 @@ from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QHeaderView
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
+from shopping_cart_dlg import CartDlg
+from shopping_cart_dlg import CartItem
 from page_navigator import PageNavigator
 from spider import Spider 
 from queue import Queue
@@ -25,8 +28,10 @@ class   MSG(Enum):
     SEARCH = auto()
     CONDITION_SEARCH = auto()
     ADDCART = auto()
+    DISPLAYCART = auto()
     GREEN   = auto()
     PINK    = auto()
+
 
 class ProdItem():
     idx =0
@@ -43,6 +48,8 @@ class ProdItem():
     def __init__(self):
         pass
     
+
+
 class MyTableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
         #call custom constructor with UserType item type
@@ -53,7 +60,7 @@ class MyTableWidgetItem(QTableWidgetItem):
     def __lt__(self, other):
         return self.sortKey < other.sortKey    
 
-class mywindow(QtWidgets.QMainWindow, Ui_Nima):
+class mywindow(QMainWindow, Ui_Nima):
     def  __init__ (self):
         super(mywindow, self).__init__()
         self.setupUi(self)
@@ -64,6 +71,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
         self.btn_Calc.clicked.connect(self.Calc)
+        self.cartBtn.clicked.connect(self.openCart)
         self.tableWidget.setSortingEnabled(True);
         self.tableWidget.sortByColumn(4, Qt.AscendingOrder)
         self.queue = Queue()
@@ -92,6 +100,12 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
     
     def addCart(self):
         self.queue.put(MSG.ADDCART)
+    
+    def openCart(self):
+        self.queue.put(MSG.DISPLAYCART)
+        self.cartDlg = CartDlg()
+        self.ThreadEmation.updateCart.connect(self.cartDlg.UpdateTableWidget)
+        self.cartDlg.show()
 
     def Calc(self):
         if self.edt_quantity.text() =="":
@@ -183,6 +197,7 @@ class mywindow(QtWidgets.QMainWindow, Ui_Nima):
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
     updateViewSignal = QtCore.pyqtSignal(list)
+    updateCart = QtCore.pyqtSignal(list)
     updateResultSignal = QtCore.pyqtSignal(str)
     goods_in_stock = False
     pageCount = 0
@@ -198,14 +213,64 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             MSG.LOGIN : self.loginLCSC,
             MSG.SEARCH : self.crawlingLCSC,
             MSG.CONDITION_SEARCH : self.conditionSearch1,
-            MSG.ADDCART : self.addCartAjax
+            MSG.ADDCART : self.addCartAjax,
+            MSG.DISPLAYCART: self.displayCart
         }
         while True:
             msg_id = self.queue.get()
             method = numbers.get(msg_id, "")
             if method:
                 method()
-    
+
+    def displayCart(self):
+        spider = self.spider
+        print("*"*80)
+
+        url = "https://cart.szlcsc.com/cart/display?isInit=true&isOrderBack=false"
+        html = spider.spr_get_html(url, http2=True)
+        self.writeToFile("foo_cart.json", html)
+        try:
+            jo1=json.loads(html)
+        except json.decoder.JSONDecodeError as e:
+            print("catch error: ", e)
+            return
+        shoppingCartVO = jo1["result"]["shoppingCartVO"]
+        cartTotalSize = shoppingCartVO["cartTotalSize"]
+        rmbCnShoppingCart = shoppingCartVO["rmbCnShoppingCart"]
+        productSize = rmbCnShoppingCart["productSize"]
+        productList = rmbCnShoppingCart["currentlyProductList"]
+        self.cartProductList =[]
+        for i, product in enumerate(productList):
+            cartItem = CartItem()
+            cartItem.productId = product["productId"]
+            cartItem.productCode = product["productCode"]
+            cartItem.productName=product["productName"]
+            cartItem.productModel=product["productModel"]
+            cartItem.shopCarMapKey=product["shopCarMapKey"]
+            cartItem.shopCarId=product["shopCarId"]
+            cartItem.productNumber=product["productNumber"] #购买数量
+            cartItem.convesionRatio = product["convesionRatio"]
+            cartItem.productConsultPrice = product["productConsultPrice"]
+            cartItem.productType=product["productType"]
+            cartItem.productGradePlateName=product["productGradePlateName"] #品牌
+            cartItem.encapsulationModel=product["encapsulationModel"] #封装
+            cartItem.remark = product["remark"] #材质
+            cartItem.bigImageUrl = product["bigImageUrl"]
+            cartItem.hasAnnexPDF = product["hasAnnexPDF"]
+            cartItem.gdDeliveryNum=product["gdDeliveryNum"]
+            cartItem.gdDivideSplitDeliveryNum=product["gdDivideSplitDeliveryNum"]
+            cartItem.isAllowUseCoupon=product["isAllowUseCoupon"] #是否允许使用优惠券
+            cartItem.jsValidStockNumber = product["jsValidStockNumber"] #江苏库存
+            cartItem.szValidStockNumber = product["szValidStockNumber"] #广东库存
+            cartItem.stockNumber = product["stockNumber"] #总库存
+            cartItem.lineMoney = product["lineMoney"] #价格
+            cartItem.overseaProductTotalMoney = product["overseaProductTotalMoney"] #价格
+            cartItem.productCycle =product["productCycle"]
+            self.cartProductList.append(cartItem)
+        self.updateCart.emit(self.cartProductList)
+        print("*"*80)
+        #print(html)
+
     def addCartAjax(self):
         spider = self.spider
         print("*"*80)
@@ -476,12 +541,18 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         print(html)
         self.writeToFile("foo4.html", html)
         print(spider.cookie)
-        self.printLog("登录完成")
+        try:
+            jo1=json.loads(html)
+        except json.decoder.JSONDecodeError as e:
+            print("catch error: ", e)
+            
+        
+        self.printLog(jo1["result"]["customerCode"] + " 登录完成")
 
 if __name__== "__main__":
     
     app=QtWidgets.QApplication(sys.argv)
     ui = mywindow()    
     ui.show()
-    #ui.loginToLCSC()
+    ui.loginToLCSC()
     sys.exit(app.exec_())

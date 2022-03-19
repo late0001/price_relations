@@ -53,3 +53,18 @@ GET
        <div id="by-channel-total" class="g04 spnum">符合条件商品：共
       <b style="color: #DE3231;">300</b>件
     </div>
+	
+	
+	
+GET
+	https://order.szlcsc.com/order/area/all/sms/list/jsonp?currencyType=RMB&callback=jQuery360059523593808501_1647608837391&_=1647608837392
+	
+返回如 city.json
+
+购物车
+GET
+ https://cart.szlcsc.com/cart/display?isInit=true&isOrderBack=false&1647608837432
+
+
+
+
