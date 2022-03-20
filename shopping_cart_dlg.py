@@ -12,7 +12,10 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QLabel
+from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QTableWidgetItem
 
 class CartItem():
@@ -42,10 +45,31 @@ class CartItem():
     overseaProductTotalMoney = 0 #价格
     productCycle ="on_sale"
 
+class Cart():
+    discountMoney=0 #优惠金额
+    cartTypeCount=0 #货品种类
+    cartTypeGdCount=0 #广东发货种类
+    cartOnlineMoney=0 #总价
+    cartProductList=[]
+
 class CartDlg(QDialog,Ui_CartDlg):
     def  __init__ (self):
         super(CartDlg, self).__init__()
         self.setupUi(self)
+        ft = QFont()
+        ft.setBold(True)
+        ft.setPointSize(14)
+        self.label_cartTypeCount.setFont(ft)
+        self.label_cartTotalMoney.setFont(ft)
+        pa= QPalette()
+        pa.setColor(QPalette.WindowText,QColor(0xff7800))
+        self.label_cartTypeCount.setPalette(pa)
+        self.label_cartTotalMoney.setPalette(pa)
+
+    def UpdateTotalMoney(self, cart):
+        self.label_cartTypeCount.setText(str(cart.cartTypeCount))
+        self.label_cartTotalMoney.setText(str(cart.cartOnlineMoney))
+
 
     def initTable(self, cartProductList, table_rows):
         rowCnt = self.tableWidget.rowCount()
@@ -74,7 +98,6 @@ class CartDlg(QDialog,Ui_CartDlg):
             check = QTableWidgetItem()   
             check.setTextAlignment(Qt.AlignHCenter )  
             check.setCheckState(Qt.Checked)
-            #pix = QPixmap(product.bigImageUrl)
             pix = QPixmap(product.localImg)
             label1= QLabel()
             label1.setScaledContents(True);#设置图片适应label
@@ -123,4 +146,5 @@ class CartDlg(QDialog,Ui_CartDlg):
         #self.tableWidget.setColumnWidth(2, 140)
 
     def UpdateTableWidget(self, res):
-        self.initTable( res, 0)
+        self.UpdateTotalMoney(res)
+        self.initTable( res.cartProductList, 0)

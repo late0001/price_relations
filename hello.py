@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from cmppui import Ui_Nima
 from shopping_cart_dlg import CartDlg
 from shopping_cart_dlg import CartItem
+from shopping_cart_dlg import Cart
 from page_navigator import PageNavigator
 from spider import Spider 
 from queue import Queue
@@ -198,7 +199,7 @@ class mywindow(QMainWindow, Ui_Nima):
 class EmationThread(QtCore.QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
     updateViewSignal = QtCore.pyqtSignal(list)
-    updateCart = QtCore.pyqtSignal(list)
+    updateCart = QtCore.pyqtSignal(Cart)
     updateResultSignal = QtCore.pyqtSignal(str)
     goods_in_stock = False
     pageCount = 0
@@ -240,7 +241,12 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         rmbCnShoppingCart = shoppingCartVO["rmbCnShoppingCart"]
         productSize = rmbCnShoppingCart["productSize"]
         productList = rmbCnShoppingCart["currentlyProductList"]
-        self.cartProductList =[]
+        cart = Cart()
+        cart.cartTypeCount = rmbCnShoppingCart["cartTypeCount"]
+        cart.cartTypeGdCount = rmbCnShoppingCart["cartTypeGdCount"]
+        cart.cartOnlineMoney = rmbCnShoppingCart["cartOnlineMoney"]
+
+        cartProductList =[]
         for i, product in enumerate(productList):
             cartItem = CartItem()
             cartItem.productId = product["productId"]
@@ -267,18 +273,18 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             cartItem.lineMoney = product["lineMoney"] #价格
             cartItem.overseaProductTotalMoney = product["overseaProductTotalMoney"] #价格
             cartItem.productCycle =product["productCycle"]
-            self.cartProductList.append(cartItem)
+            cartProductList.append(cartItem)
         savedir = os.getcwd() + "/cache"
         if(not os.path.exists(savedir)):
             os.makedirs(savedir)    
-        for i, product in enumerate(self.cartProductList):
+        for i, product in enumerate(cartProductList):
             product.localImg = spider.extractFileName(product.bigImageUrl, savedir)
             if(product.localImg == None):
                 continue
             print("%s -- > %s"%(product.bigImageUrl, product.localImg))
             spider.spr_get_file(product.bigImageUrl, product.localImg)
-
-        self.updateCart.emit(self.cartProductList)
+        cart.cartProductList = cartProductList
+        self.updateCart.emit(cart)
         print("*"*80)
         #print(html)
 
