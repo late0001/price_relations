@@ -11,6 +11,8 @@ from shopping_cartui import Ui_CartDlg
 from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QTableWidgetItem
 
 class CartItem():
@@ -28,6 +30,7 @@ class CartItem():
     encapsulationModel="" #封装
     remark = "" #材质
     bigImageUrl = ""
+    localImg = ""
     hasAnnexPDF = "no"
     gdDeliveryNum=0
     gdDivideSplitDeliveryNum=0
@@ -71,7 +74,11 @@ class CartDlg(QDialog,Ui_CartDlg):
             check = QTableWidgetItem()   
             check.setTextAlignment(Qt.AlignHCenter )  
             check.setCheckState(Qt.Checked)
-
+            #pix = QPixmap(product.bigImageUrl)
+            pix = QPixmap(product.localImg)
+            label1= QLabel()
+            label1.setScaledContents(True);#设置图片适应label
+            label1.setPixmap(pix)
             productname_item = QTableWidgetItem(productname)   
             productname_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)       
             
@@ -96,9 +103,9 @@ class CartDlg(QDialog,Ui_CartDlg):
 
             price_item = QTableWidgetItem("price")
             price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-            
+
             self.tableWidget.setItem(i, 0, check)
-            self.tableWidget.setItem(i, 1, productname_item)
+            self.tableWidget.setCellWidget(i, 1, label1)
             self.tableWidget.setItem(i, 2, productCode_item)
             self.tableWidget.setItem(i, 3, productInfo_item)
             self.tableWidget.setItem(i, 4, productConsultPrice_item)

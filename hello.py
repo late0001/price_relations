@@ -13,6 +13,7 @@ from page_navigator import PageNavigator
 from spider import Spider 
 from queue import Queue
 import sys
+import os
 import re
 import httpx
 import lxml.html
@@ -267,6 +268,16 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             cartItem.overseaProductTotalMoney = product["overseaProductTotalMoney"] #价格
             cartItem.productCycle =product["productCycle"]
             self.cartProductList.append(cartItem)
+        savedir = os.getcwd() + "/cache"
+        if(not os.path.exists(savedir)):
+            os.makedirs(savedir)    
+        for i, product in enumerate(self.cartProductList):
+            product.localImg = spider.extractFileName(product.bigImageUrl, savedir)
+            if(product.localImg == None):
+                continue
+            print("%s -- > %s"%(product.bigImageUrl, product.localImg))
+            spider.spr_get_file(product.bigImageUrl, product.localImg)
+
         self.updateCart.emit(self.cartProductList)
         print("*"*80)
         #print(html)
@@ -524,8 +535,7 @@ class EmationThread(QtCore.QThread):  # 继承QThread
             http2 = True);
         self.writeToFile("foo2.html", html)
         print(spider.cookie)
-        
-        
+               
         url = "https://member.szlcsc.com/member/login.html?s=&c=&f=shop"
         html = spider.spr_get_html(
             url=url, 
@@ -546,7 +556,6 @@ class EmationThread(QtCore.QThread):  # 继承QThread
         except json.decoder.JSONDecodeError as e:
             print("catch error: ", e)
             
-        
         self.printLog(jo1["result"]["customerCode"] + " 登录完成")
 
 if __name__== "__main__":

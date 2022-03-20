@@ -507,6 +507,11 @@ class Spider:
         else:
             return r.read()
 
+    def spr_get_file(self, url, filename):
+        r = self.spr_get(url, header=None, http2=True)
+        with open(filename,'wb') as f: #以二进制写模式打开,rb+:以二进制读写模式打开 
+            f.write(r.content)
+        #f.close()
 
     def getHtml3(self, url):
         global cur_item_no
@@ -678,7 +683,34 @@ class Spider:
             print ()
             allpic_x+=1
             time.sleep(1)
-            
+    
+    #根据url获取文件名
+    def extractFileName(self, imgurl, savedir):
+        print ("get "+ imgurl)
+        #/picture/5ee8f061d4bc13bdf0e9fc6f846982a863486af9/01914.jpg
+        # https://alimg.szlcsc.com/upload/public/product/breviary/20180907/B91974E7996E30C9F79A4A0164D91C85.jpg
+        #reg = r'/breviary/(\d+?)/(\w+?).jpg'
+        reg = r'/middle/(\d+?)/(\w+?).jpg'
+        #imgre = re.compile(reg)
+        #img = re.findall(imgre, imgurl)
+        img = re.search(reg, imgurl)
+        filename=""
+        if(img):
+            filename = savedir + "/" + img.group(1)+"_"+img.group(2) +'.jpg'
+        else:
+            print("extractFileName not found ")
+        print ("============ getImg ==============")
+        print (filename)
+        #s = set(img) #用一个集合去除重复
+        #os.path.join(pic_savepath, )
+        #x = 0
+        #mymkdirs(pic_savepath)
+        #for img in imglist:
+        #filename = savedir + "/" + img[0][0]+"_"+img[0][1]+'.jpg'
+        #print ("%s --> %s" % (imgurl, filename))
+        return filename
+        
+
     def get_plain_text(self, jsStr):
         #jsStr='6aKc5YC85LiN6ZSZ5b6h5aeQ55u05pKtIOa/gOaDheiHquaFsOWkp+engA=='
         a = base64.b64decode(jsStr)
