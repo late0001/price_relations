@@ -13,6 +13,8 @@ from shopping_cart_dlg import CartItem
 from shopping_cart_dlg import Cart
 from spider import Spider 
 from enum import Enum, auto
+from tmessage import MessageNode
+from tmessage import Looper
 
 class   MSG(Enum):
     LOGIN = 0
@@ -23,15 +25,31 @@ class   MSG(Enum):
     GREEN   = auto()
     PINK    = auto()
 
+class ProdItem():
+    idx =0
+    productname = ""
+    productCode = ""
+    numberprices = ""
+    stockNumber = ""
+    theRatio = 1
+    productPriceList=[]
+    purchasedNumber = 0
+    purchaseUnitPrice = 0
+    purchasedAmount = 0
+    productId = ""
+    def __init__(self):
+        pass
+
 class EmationThread(QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
     updateViewSignal = QtCore.pyqtSignal(list)
     updateCart = QtCore.pyqtSignal(Cart)
     updateResultSignal = QtCore.pyqtSignal(str)
+    updateRecordCnt = QtCore.pyqtSignal(int, int) 
     goods_in_stock = False
     pageCount = 0
-    def __init__(self, queue, parent= None): # 从前端界面中传递参数到这个任务后台
-        self.queue = queue 
+    def __init__(self, looper, parent= None): # 从前端界面中传递参数到这个任务后台
+        self.looper = looper 
         super(EmationThread, self).__init__(parent)
         self.spider = Spider()
 
@@ -46,8 +64,8 @@ class EmationThread(QThread):  # 继承QThread
             MSG.DISPLAYCART: self.displayCart
         }
         while True:
-            msg_id = self.queue.get()
-            method = numbers.get(msg_id, "")
+            msg = self.looper.obtainMessage()
+            method = numbers.get(msg.msg_id, "")
             if method:
                 method()
 
@@ -187,7 +205,12 @@ class EmationThread(QThread):  # 继承QThread
         self.itemList =[]
         self.parseItems(jo_resulut['productRecordList'])
         #print(self.get_inner_html(nodes))
-        for page in range(2, pageCount):
+        self.updateViewSignal.emit(self.itemList)
+        self.printLog("Complete!")
+
+    def searchAllPage(self):
+        for page in range(2, self.pageCount):
+            self.printLog("Processing  "+str(page) +" page !")
             jo1 = self.singlePageSearch(page)
             if(not jo_resulut):
                 return;
@@ -211,6 +234,7 @@ class EmationThread(QThread):  # 继承QThread
         self.pageCount = pageCount
         self.updateResultSignal.emit("符合条件商品，共" + str(totalCount) + "件, " 
             + str(pageCount) + " 页")
+        self.updateRecordCnt.emit(totalCount, pageCount)
         self.itemList =[]
         self.parseItems(jo_resulut['productRecordList'])
 

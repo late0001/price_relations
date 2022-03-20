@@ -92,6 +92,7 @@ class PageNavigator(QWidget):
 		if(self.m_maxPage != page):
 			self.m_maxPage = page
 			self.m_currentPage = 1
+			self.m_pageTail.setText(str(self.m_maxPage))
 			self.updatePageLabels()
 
 	def setCurrentPage(self, page, signalEmitted = False):
@@ -178,6 +179,8 @@ class PageNavigator(QWidget):
 				else:
 					label.setProperty("currentPage", "false")
 				label.setStyleSheet("/**/")
+			self.setSelectStyleSheet(1, self.m_pageHead)
+			self.setSelectStyleSheet(self.m_maxPage, self.m_pageTail)
 			return
 			
 		c = self.m_currentPage

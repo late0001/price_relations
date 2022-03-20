@@ -13,24 +13,9 @@ from queue import Queue
 import sys
 from emation_thread import EmationThread
 from emation_thread import MSG
+from tmessage import MessageNode
+from tmessage import Looper
 
-
-
-class ProdItem():
-    idx =0
-    productname = ""
-    productCode = ""
-    numberprices = ""
-    stockNumber = ""
-    theRatio = 1
-    productPriceList=[]
-    purchasedNumber = 0
-    purchaseUnitPrice = 0
-    purchasedAmount = 0
-    productId = ""
-    def __init__(self):
-        pass
-    
 
 
 class MyTableWidgetItem(QTableWidgetItem):
@@ -50,6 +35,7 @@ class mywindow(QMainWindow, Ui_Nima):
         self.pageNavigator = PageNavigator()
         self.horizontalLayout.addWidget(self.pageNavigator)
         self.pageNavigator.setMaxPage(15)
+        self.pageNavigator.currentPageChanged.connect(self.pageChanged)
         self.pushButton.clicked.connect(self.get_lcsc)
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
@@ -57,15 +43,17 @@ class mywindow(QMainWindow, Ui_Nima):
         self.cartBtn.clicked.connect(self.openCart)
         self.tableWidget.setSortingEnabled(True);
         self.tableWidget.sortByColumn(4, Qt.AscendingOrder)
-        self.queue = Queue()
-        self.ThreadEmation = EmationThread(self.queue)
+        self.looper = Looper()
+        self.ThreadEmation = EmationThread(self.looper)
         self.ThreadEmation.updateSignal.connect(self.UpdateStatusText) 
         self.ThreadEmation.updateViewSignal.connect(self.UpdateTableWidget)
         self.ThreadEmation.updateResultSignal.connect(self.UpdateResultText)
+        self.ThreadEmation.updateRecordCnt.connect(self.UpdateRecordCnt)
         self.productRecordList = []
 
     def loginToLCSC(self):
-        self.queue.put(MSG.LOGIN)
+        msg = MessageNode(MSG.LOGIN)
+        self.looper.sendMessage(msg)
         self.ThreadEmation.start()
    
     def openDialog(self):
@@ -76,16 +64,28 @@ class mywindow(QMainWindow, Ui_Nima):
     def changeCkbSpot(self):
          if self.ckb_spot.checkState() == Qt.Checked:
             self.ThreadEmation.setSearchCriteria(True)
-            self.queue.put(MSG.CONDITION_SEARCH)
+            msg = MessageNode(MSG.CONDITION_SEARCH)
+            self.looper.sendMessage(msg)
 
-    def get_lcsc(self):  
-        self.queue.put(MSG.SEARCH)
+    def pageChanged(self, page):
+        msg = MessageNode(MSG.SEARCH, page)
+        self.looper.sendMessage(msg)
+
+    def get_lcsc(self):
+        msg = MessageNode(MSG.SEARCH)
+        self.looper.sendMessage(msg)
     
     def addCart(self):
-        self.queue.put(MSG.ADDCART)
+        msg = MessageNode(MSG.ADDCART)
+        self.looper.sendMessage(msg)
     
+    def UpdateRecordCnt(self, recordCnt, pageCnt):
+        print("UpdateRecordCnt =====>")
+        self.pageNavigator.setMaxPage(pageCnt)
+
     def openCart(self):
-        self.queue.put(MSG.DISPLAYCART)
+        msg = MessageNode(MSG.DISPLAYCART)
+        self.looper.sendMessage(msg)
         self.cartDlg = CartDlg()
         self.ThreadEmation.updateCart.connect(self.cartDlg.UpdateTableWidget)
         self.cartDlg.show()
@@ -119,7 +119,7 @@ class mywindow(QMainWindow, Ui_Nima):
             product.purchasedAmount = unitPrice * quantity * coeff
 
         for i, product in enumerate(self.productRecordList):
-            price_item = MyTableWidgetItem(str(product.purchasedAmount), product.purchasedAmount)
+            price_item = MyTableWidgetItem("{:.4f}".format(product.purchasedAmount), product.purchasedAmount)
             price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             self.tableWidget.setItem(i, 4, price_item)
 
@@ -174,7 +174,7 @@ class mywindow(QMainWindow, Ui_Nima):
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         #self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.setColumnWidth(0, 240)
-        self.tableWidget.setColumnWidth(2, 140)
+        self.tableWidget.setColumnWidth(2, 150)
         #self.tableWidget.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
 
 
