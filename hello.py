@@ -39,7 +39,8 @@ class mywindow(QMainWindow, Ui_Nima):
         self.pushButton.clicked.connect(self.get_lcsc)
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
-        self.btn_Calc.clicked.connect(self.Calc)
+        self.btn_Calc.clicked.connect(self.calc)
+        self.btn_AllPage.clicked.connect(self.resultAllPage)
         self.cartBtn.clicked.connect(self.openCart)
         self.tableWidget.setSortingEnabled(True);
         self.tableWidget.sortByColumn(4, Qt.AscendingOrder)
@@ -68,7 +69,11 @@ class mywindow(QMainWindow, Ui_Nima):
             self.looper.sendMessage(msg)
 
     def pageChanged(self, page):
-        msg = MessageNode(MSG.SEARCH, page)
+        msg = MessageNode(MSG.SEARCH_PAGE, page)
+        self.looper.sendMessage(msg)
+
+    def resultAllPage(self):
+        msg = MessageNode(MSG.SEARCH_PAGE, 0)
         self.looper.sendMessage(msg)
 
     def get_lcsc(self):
@@ -90,7 +95,7 @@ class mywindow(QMainWindow, Ui_Nima):
         self.ThreadEmation.updateCart.connect(self.cartDlg.UpdateTableWidget)
         self.cartDlg.show()
 
-    def Calc(self):
+    def calc(self):
         if self.edt_quantity.text() =="":
             QMessageBox.critical(self,"错误","Empty Value Not Allowed!！")        
             self.edt_quantity.setFocus()

@@ -19,6 +19,7 @@ from tmessage import Looper
 class   MSG(Enum):
     LOGIN = 0
     SEARCH = auto()
+    SEARCH_PAGE = auto()
     CONDITION_SEARCH = auto()
     ADDCART = auto()
     DISPLAYCART = auto()
@@ -59,6 +60,7 @@ class EmationThread(QThread):  # 继承QThread
         numbers = {
             MSG.LOGIN : self.loginLCSC,
             MSG.SEARCH : self.crawlingLCSC,
+            MSG.SEARCH_PAGE: self.searchEntry,
             MSG.CONDITION_SEARCH : self.conditionSearch1,
             MSG.ADDCART : self.addCartAjax,
             MSG.DISPLAYCART: self.displayCart
@@ -67,9 +69,9 @@ class EmationThread(QThread):  # 继承QThread
             msg = self.looper.obtainMessage()
             method = numbers.get(msg.msg_id, "")
             if method:
-                method()
+                method(msg.wparam, msg.lparam)
 
-    def displayCart(self):
+    def displayCart(self, wparam, lparam):
         spider = self.spider
         print("*"*80)
 
@@ -133,7 +135,7 @@ class EmationThread(QThread):  # 继承QThread
         print("*"*80)
         #print(html)
 
-    def addCartAjax(self):
+    def addCartAjax(sel, wparam, lparam):
         spider = self.spider
         print("*"*80)
         url = "https://cart.szlcsc.com/jsonp/add?cartKeyStr=0~257230~RMB~CN~3~3~0&entryType=product_choose_buy"
@@ -186,6 +188,15 @@ class EmationThread(QThread):  # 继承QThread
         return jo1["result"]
         #print(jo1["result"]['productRecordList'][0])
 
+    def SearchPage(self, page):
+        self.printLog("Processing  "+str(page) +" page !")
+        jo1 = self.singlePageSearch(page)
+        if(not jo1):
+            return;
+            #print(jo1["result"]['productRecordList'][0])
+        self.parseItems(jo1['productRecordList'])
+        self.updateViewSignal.emit(self.itemList)
+        self.printLog("Complete!")
 
     def conditionSearch(self):
         spider = self.spider 
@@ -209,17 +220,17 @@ class EmationThread(QThread):  # 继承QThread
         self.printLog("Complete!")
 
     def searchAllPage(self):
-        for page in range(2, self.pageCount):
+        for page in range(2, self.pageCount+1):
             self.printLog("Processing  "+str(page) +" page !")
             jo1 = self.singlePageSearch(page)
-            if(not jo_resulut):
+            if(not jo1):
                 return;
             #print(jo1["result"]['productRecordList'][0])
             self.parseItems(jo1['productRecordList'])
         self.updateViewSignal.emit(self.itemList)
         self.printLog("Complete!")
 
-    def conditionSearch1(self):
+    def conditionSearch1(self, wparam, lparam):
         spider = self.spider 
         if(self.pageCount == 0):
             self.printLog("没有先搜一下就设定条件!")
@@ -241,8 +252,14 @@ class EmationThread(QThread):  # 继承QThread
         self.updateViewSignal.emit(self.itemList)
         self.printLog("Complete!")
 
+    def searchEntry(self, wparam, lparam):
+        page = wparam
+        if(page > 0):
+            self.SearchPage(page)
+            return
+        self.searchAllPage()
 
-    def crawlingLCSC(self):
+    def crawlingLCSC(self, wparam, lparam):
         spider = self.spider
         
         url ="https://so.szlcsc.com/global.html?k=10nf%25200402&hot-key=TJA1043T%2F1J"      
@@ -324,7 +341,7 @@ class EmationThread(QThread):  # 继承QThread
         p_end = html.rfind('<')
         return html[p_begin: p_end]
 
-    def loginLCSC(self):
+    def loginLCSC(self, wparam=None, lparam=None):
         self.printLog("登录中...")
         spider = self.spider
         html = spider.spr_get_html(
