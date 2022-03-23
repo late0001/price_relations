@@ -232,14 +232,17 @@ class Spider:
         print ('='*80)
         return html
 
-    def spr_post_h2(self, url, headers, data):
+    def spr_post_h2(self, url, headers, data, json=None):
         for i in range(1,15):
             try:
                 with httpx.Client(headers=headers, params=data, http2=True) as client:
                     # with 内部请求共用一个client，参数也共用
                     # 替换client的参数
                     #headers = {'X-Custom': 'from-request'}
-                    r = client.post(url, headers=headers, params=data, cookies = self.cookies)
+                    if(json):
+                        r = client.post(url, headers=headers, json=json, cookies = self.cookies)
+                    else:
+                        r = client.post(url, headers=headers, params=data, cookies = self.cookies)
                     self.cookies.update(r.cookies)
                     print ('url: ', url)
                     print ('http status:', r.status_code)
@@ -250,7 +253,8 @@ class Spider:
                 print("Error occuer:", e )
                 print("retry get url: %s\n Count: %d"% (url, i))
         if(i >= 15):
-            print("failed, retry 15 times can not get response text")    
+            print("failed, retry 15 times can not get response text")  
+
 
     def spr_post_h11(self, url, headers, data, timeout = 2):
         global cur_item_no
@@ -306,7 +310,7 @@ class Spider:
         print ('='*80)
         return page
 
-    def spr_post(self, url, data, header = None, timeout = 2, http2 = False):
+    def spr_post(self, url, data = None, header = None, timeout = 2, http2 = False, json = None):
         global cur_item_no
         headers = {
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -346,8 +350,10 @@ class Spider:
         #page = opener.open(url)
         #ssl._create_default_https_context = ssl._create_unverified_context
         #deal_data = bytes(parse.urlencode(data), encoding='utf8')
+        if(header):
+            headers.update(header)
         if(http2):
-            r = self.spr_post_h2(url, headers, data)
+            r = self.spr_post_h2(url, headers, data, json=json)
         else:
             r = self.spr_post_h11(url, headers, data)
         return r 

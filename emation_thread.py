@@ -15,7 +15,7 @@ from spider import Spider
 from enum import Enum, auto
 from tmessage import MessageNode
 from tmessage import Looper
-
+import common
 class   MSG(Enum):
     LOGIN = 0
     SEARCH = auto()
@@ -40,6 +40,8 @@ class ProdItem():
     productId = ""
     def __init__(self):
         pass
+
+
 
 class EmationThread(QThread):  # 继承QThread
     updateSignal = QtCore.pyqtSignal(str)  # 注册一个信号
@@ -77,7 +79,7 @@ class EmationThread(QThread):  # 继承QThread
 
         url = "https://cart.szlcsc.com/cart/display?isInit=true&isOrderBack=false"
         html = spider.spr_get_html(url, http2=True)
-        self.writeToFile("foo_cart.json", html)
+        common.writeToFile("foo_cart.json", html)
         try:
             jo1=json.loads(html)
         except json.decoder.JSONDecodeError as e:
@@ -142,7 +144,7 @@ class EmationThread(QThread):  # 继承QThread
         #header = {"Referer" : "https://so.szlcsc.com/"}
         #html = spider.spr_get_html(url, header=header, http2=True)
         html = spider.spr_get_html(url, http2=True)
-        self.writeToFile("foo_addcart.html", html)
+        common.writeToFile("foo_addcart.html", html)
         print("*"*80)
         print(html)
 
@@ -174,7 +176,8 @@ class EmationThread(QThread):  # 继承QThread
         if (self.goods_in_stock):
             data.update({"os":  "0"})
         html = spider.spr_post_gethtml(url, data=data, http2=True)
-        self.writeToFile("searchResult.html", html)
+        common.writeToFile("searchResult.html", html)
+        scr_node=""
         for i in range(1, 15):
             try:
                 jo1=json.loads(html)
@@ -194,6 +197,7 @@ class EmationThread(QThread):  # 继承QThread
         if(not jo1):
             return;
             #print(jo1["result"]['productRecordList'][0])
+        self.itemList =[]
         self.parseItems(jo1['productRecordList'])
         self.updateViewSignal.emit(self.itemList)
         self.printLog("Complete!")
@@ -220,7 +224,8 @@ class EmationThread(QThread):  # 继承QThread
         self.printLog("Complete!")
 
     def searchAllPage(self):
-        for page in range(2, self.pageCount+1):
+        self.itemList =[]
+        for page in range(1, self.pageCount+1):
             self.printLog("Processing  "+str(page) +" page !")
             jo1 = self.singlePageSearch(page)
             if(not jo1):
@@ -265,7 +270,7 @@ class EmationThread(QThread):  # 继承QThread
         url ="https://so.szlcsc.com/global.html?k=10nf%25200402&hot-key=TJA1043T%2F1J"      
         html = spider.spr_get_html(url, http2=True)
         #print(html.decode("utf-8"))
-        self.writeToFile("foo.html", html)
+        common.writeToFile("foo.html", html)
         doc = etree.HTML(html)
         nodes = doc.xpath('//div[@id=\'by-channel-total\']//b')
         print("nodes = ", nodes)
@@ -331,10 +336,6 @@ class EmationThread(QThread):  # 继承QThread
     def printLog(self,text):
         self.updateSignal.emit(text)  # 任务完成后，发送信号
 
-    def writeToFile(self, filename, content):
-        with open(filename, "w", encoding="utf-8") as fo:
-            fo.write(content)
-
     def get_inner_html(self, node):
         html = node
         p_begin = html.find('>') +1
@@ -349,7 +350,7 @@ class EmationThread(QThread):  # 继承QThread
             http2 = True)
         respHtml = html
         #print(respHtml)
-        self.writeToFile("foo2.html", respHtml)
+        common.writeToFile("foo2.html", respHtml)
         print(spider.cookie)
         foundTokenVal = re.search("<input type=\"hidden\" name=\"lt\" value=\"(?P<lt>LT-.*-cas.test.com)\" />", respHtml)
         flt = ""
@@ -400,21 +401,21 @@ class EmationThread(QThread):  # 继承QThread
         #print("location is : ", response.info())
         print("*"*80)
        # print("getheaders() =>", response.getheaders())
-        self.writeToFile("foo1.html", respHtml)
+        common.writeToFile("foo1.html", respHtml)
         print(spider.cookie)
         #https://member.szlcsc.com/member/login.html?s=&ticket=ST-321346-Xryqf1J6kcfl9f9ahVpd-cas.test.com
         url = response.headers['location']
         html = spider.spr_get_html(
             url=url, 
             http2 = True);
-        self.writeToFile("foo2.html", html)
+        common.writeToFile("foo2.html", html)
         print(spider.cookie)
                
         url = "https://member.szlcsc.com/member/login.html?s=&c=&f=shop"
         html = spider.spr_get_html(
             url=url, 
             http2 = True);
-        self.writeToFile("foo3.html", html)
+        common.writeToFile("foo3.html", html)
         print(spider.cookie)
         #html = spider.spr_get(url="https://www.szlcsc.com/async/page/home/order/customer/message")
         url="https://www.szlcsc.com/async/page/home/order/customer/message"
@@ -423,7 +424,7 @@ class EmationThread(QThread):  # 继承QThread
             url=url, 
             http2 = True);
         print(html)
-        self.writeToFile("foo4.html", html)
+        common.writeToFile("foo4.html", html)
         print(spider.cookie)
         try:
             jo1=json.loads(html)

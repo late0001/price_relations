@@ -15,8 +15,8 @@ from emation_thread import EmationThread
 from emation_thread import MSG
 from tmessage import MessageNode
 from tmessage import Looper
-
-
+from hq_thread import HqThread
+from hq_thread import HQMSG
 
 class MyTableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
@@ -51,12 +51,20 @@ class mywindow(QMainWindow, Ui_Nima):
         self.ThreadEmation.updateResultSignal.connect(self.UpdateResultText)
         self.ThreadEmation.updateRecordCnt.connect(self.UpdateRecordCnt)
         self.productRecordList = []
+        self.hqLooper = Looper()
+        self.ThreadHq = HqThread(self.hqLooper)
+        self.ThreadHq.updateSignal.connect(self.UpdateStatusText)
 
     def loginToLCSC(self):
         msg = MessageNode(MSG.LOGIN)
         self.looper.sendMessage(msg)
         self.ThreadEmation.start()
    
+    def loginToHqChip(self):
+        msg = MessageNode(HQMSG.LOGIN)
+        self.hqLooper.sendMessage(msg)
+        self.ThreadHq.start()
+
     def openDialog(self):
         filename, filetype =QFileDialog.getOpenFileName(self, "选取文件", "C:/", "All Files(*);;Text Files(*.csv)")
         print(filename, filetype)
@@ -185,9 +193,9 @@ class mywindow(QMainWindow, Ui_Nima):
 
 
 if __name__== "__main__":
-    
     app=QtWidgets.QApplication(sys.argv)
     ui = mywindow()    
     ui.show()
-    ui.loginToLCSC()
+    #ui.loginToLCSC()
+    ui.loginToHqChip()
     sys.exit(app.exec_())
