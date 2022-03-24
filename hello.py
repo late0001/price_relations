@@ -18,6 +18,7 @@ from tmessage import Looper
 from hq_thread import HqThread
 from hq_thread import HQMSG
 
+
 class MyTableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
         #call custom constructor with UserType item type
@@ -36,7 +37,7 @@ class mywindow(QMainWindow, Ui_Nima):
         self.horizontalLayout.addWidget(self.pageNavigator)
         self.pageNavigator.setMaxPage(15)
         self.pageNavigator.currentPageChanged.connect(self.pageChanged)
-        self.pushButton.clicked.connect(self.get_lcsc)
+        self.btnSearch.clicked.connect(self.searchBtnClicked)
         self.btn_Addcart.clicked.connect(self.addCart)
         self.ckb_spot.stateChanged.connect(self.changeCkbSpot)
         self.btn_Calc.clicked.connect(self.calc)
@@ -54,6 +55,19 @@ class mywindow(QMainWindow, Ui_Nima):
         self.hqLooper = Looper()
         self.ThreadHq = HqThread(self.hqLooper)
         self.ThreadHq.updateSignal.connect(self.UpdateStatusText)
+        self.ThreadHq.updateViewSignal.connect(self.UpdateTableWidget)
+        self.radioLCSC.toggled.connect(lambda :self.radioBtnState(self.radioLCSC))
+        self.radioHQ.toggled.connect(lambda :self.radioBtnState(self.radioHQ))
+        self.radioLCSC.setChecked(True)
+        self.fromsite = 1
+
+    def radioBtnState(self, btn):
+        if btn.text()=='立创商城':
+            if(btn.isChecked()):
+                self.fromsite = 1
+        if( btn.text()== '华秋商城'):
+            if(btn.isChecked()):
+                self.fromsite = 2
 
     def loginToLCSC(self):
         msg = MessageNode(MSG.LOGIN)
@@ -84,10 +98,14 @@ class mywindow(QMainWindow, Ui_Nima):
         msg = MessageNode(MSG.SEARCH_PAGE, 0)
         self.looper.sendMessage(msg)
 
-    def get_lcsc(self):
-        msg = MessageNode(MSG.SEARCH)
-        self.looper.sendMessage(msg)
-    
+    def searchBtnClicked(self):
+        if(self.fromsite == 1):
+            msg = MessageNode(MSG.SEARCH)
+            self.looper.sendMessage(msg)
+        if(self.fromsite == 2):
+            msg = MessageNode(HQMSG.SEARCH)
+            self.hqLooper.sendMessage(msg)
+
     def addCart(self):
         msg = MessageNode(MSG.ADDCART)
         self.looper.sendMessage(msg)
@@ -171,7 +189,7 @@ class mywindow(QMainWindow, Ui_Nima):
             numberprices_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
 
             stockNumber_item = QTableWidgetItem(stockNumber)
-            stockNumber_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            stockNumber_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
             price_item = QTableWidgetItem("price")
             price_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)

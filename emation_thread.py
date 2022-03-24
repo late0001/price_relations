@@ -16,6 +16,8 @@ from enum import Enum, auto
 from tmessage import MessageNode
 from tmessage import Looper
 import common
+from product import ProdItem
+
 class   MSG(Enum):
     LOGIN = 0
     SEARCH = auto()
@@ -25,22 +27,6 @@ class   MSG(Enum):
     DISPLAYCART = auto()
     GREEN   = auto()
     PINK    = auto()
-
-class ProdItem():
-    idx =0
-    productname = ""
-    productCode = ""
-    numberprices = ""
-    stockNumber = ""
-    theRatio = 1
-    productPriceList=[]
-    purchasedNumber = 0
-    purchaseUnitPrice = 0
-    purchasedAmount = 0
-    productId = ""
-    def __init__(self):
-        pass
-
 
 
 class EmationThread(QThread):  # 继承QThread
@@ -319,7 +305,7 @@ class EmationThread(QThread):  # 继承QThread
             #numberprices= str(int(temp[5])* coeff) + ": " + temp[5+2]
             stockNumber = "广东仓： " + str(product["gdWarehouseStockNumber"]) +"\n" \
                         "江苏仓： "+str(product["jsWarehouseStockNumber"]) 
-            xitem = ProdItem()
+            xitem = hello.ProdItem()
             xitem.productname = productname
             xitem.productCode = productCode
             xitem.productId = productId

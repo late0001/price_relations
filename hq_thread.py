@@ -9,6 +9,7 @@ import common
 from enum import Enum, auto
 from spider import Spider 
 from configparser import ConfigParser
+from product import ProdItem
 
 class   HQMSG(Enum):
     LOGIN = 0
@@ -38,7 +39,7 @@ class HqThread(QThread):  # 继承QThread
         #msg = self.queue.get(block = False)
         numbers = {
             HQMSG.LOGIN : self.loginHqChip,
-            #HQMSG.SEARCH : self.crawlingLCSC,
+            HQMSG.SEARCH : self.search,
             #HQMSG.SEARCH_PAGE: self.searchEntry,
             #HQMSG.CONDITION_SEARCH : self.conditionSearch1,
             #HQMSG.ADDCART : self.addCartAjax,
@@ -52,6 +53,53 @@ class HqThread(QThread):  # 继承QThread
 
     def printLog(self,text):
         self.updateSignal.emit(text)  # 任务完成后，发送信号
+
+    def parseItems(self, productRecordList):
+        
+        for i, product in enumerate(productRecordList):
+
+            productname = \
+                          "封装： " + product["encap"] + "\n" \
+                        + "品牌： " + product["SelfBrand"]["brand_name"] +"("+ product["SelfBrand"]["brand_cn"]+")" + "\n" \
+                        + "型号： " + product["ModelName"] + "\n" \
+                        + "描述： " + product["Desc"] + "\n" 
+            productCode = "GoodsId: " + str(product["GoodsId"]) + "\n" \
+                        + "GoodsSn: " + product["GoodsSn"] #加入购物车时有用
+            productId = product["GoodsSn"] 
+
+            #coeff = product["theRatio"]
+            numberprices =""
+            
+            for k, priitem in enumerate(product["Tiered"]):
+                numberprices += str(priitem[0]) + "+: " + str(priitem[1]) + "\n"
+            #numberprices= str(int(temp[5])* coeff) + ": " + temp[5+2]
+            stockNumber=""
+            for k, priitem in enumerate(product["Stocks"]):
+                stockNumber += str(priitem[0]) + "+: " + str(priitem[1]) + "\n"
+            xitem = ProdItem()
+            xitem.productname = productname
+            xitem.productCode = productCode
+            xitem.productId = productId
+            xitem.numberprices = numberprices
+            xitem.stockNumber = stockNumber
+            xitem.productPriceList = product["Tiered"]
+            #xitem.theRatio = product["theRatio"]
+            self.itemList.append(xitem)
+
+    def search(self, wparam, lparam):
+        spider = self.spider
+        #url = "https://ss.hqchip.com/?keyword=10NF+0402&es_keyword=10nf+0402&supp=42,22,29,27,34,44,38,41,24,36,19,43,45,48&limit=100"
+        url = "https://s13.hqchip.com/?k=13&keyword=100NF+0402&es_keyword=100nf+0402&limit=100&match_model_name=0"
+        html = spider.spr_get_html(url)
+        try:
+            jo1=json.loads(html)
+        except json.decoder.JSONDecodeError as e:
+            print("catch error: ", e)
+        self.itemList =[]
+        #self.parseItems(jo1["PA"][0]["PD"])
+        self.parseItems(jo1["PD"])
+        self.updateViewSignal.emit(self.itemList)
+        self.printLog("Complete!")
 
     def loginHqChip(self, wparam, lparam):
         spider = self.spider
